@@ -953,9 +953,12 @@ public class LocationService extends Service {
             73.950357
     };
     int ref = 0;
+    int endref=0;
+    int f=0;
     int sref = 0;
     int tmpsref = sref;
     int tmpref = ref;
+    double tc=0;
 
     private double distance(double lat1, double lon1, double lat2, double lon2) {
         double theta = lon1 - lon2;
@@ -1047,7 +1050,7 @@ public class LocationService extends Service {
 
         }*/
 
-        for(int i = 0 ;i < slat.length; i++)
+       /* for(int i = 0 ;i < slat.length; i++)
         {
             for(int j = 0 ;j < lat.length; j++)
             {
@@ -1094,43 +1097,133 @@ public class LocationService extends Service {
         }
 
         Log.d("Toll Exit","lat lon : "+lat[tmpref]+" "+lon[tmpref]);
-        Toast.makeText(this,"lat lon : "+lat[tmpref]+" "+lon[tmpref],Toast.LENGTH_LONG).show();
+        Toast.makeText(this,"lat lon : "+lat[tmpref]+" "+lon[tmpref],Toast.LENGTH_LONG).show(); */
 
+       for(int i=0;i<slat.length;i++)
+       {
+           boolean bstart=startPoint(slat[i],slon[i]);
+           if(bstart==true)
+               break;
+       }
+        Log.d("Start Point","lat lon : "+lat[ref]+" "+lon[ref]);
 
-       Log.d("Toll cost","Total cost = "+tollcalc());
+        for(int i=0;i<slat.length;i++)
+        {
+            boolean bend=isEndPoint(slat[i],slon[i]);
+            if(bend==true)
+                break;
+        }
+        Log.d("End Point","lat lon : "+lat[endref]+" "+lon[endref]);
 
+        double tmpcost =0;
+        double cst = 0;
+        for(int i=0;i<slat.length;i++)
+        {
 
+            Log.d("tc", "onStartCommand: "+tc);
+                tc = tollcalc(slat[i], slon[i]);
+
+            //Log.d("tc gandu", "onStartCommand: "+tc);
+
+            //tmpcost = tc;
+            if(tc!=0)
+            {
+                if(cst!=tc) {
+                    cst = tc;
+                    Log.d("Toll cost", "Total cost = " + cst);
+                }
+            }
+        }
 
         return super.onStartCommand(intent, flags, startId);
     }
 
     //Calculate Toll
-    public double tollcalc()
+    public double tollcalc(double slat,double slon)
     {
        double toll = 0;
-        for(int i=0;i<slat.length;i++)
-        {
+
+        //for(int i=is;i<lat.length;i++)
+//        {
             for(int j=0;j<tolllat.length;j++)
             {
-                double dist = distance(slat[i],slon[i],tolllat[j],tolllon[j]);
+                double dist = distance(slat,slon,tolllat[j],tolllon[j]);
+                Log.d("dist","Distance is : "+dist);
                 if(dist <= 1.0) {
-                    int k;
-                    for (k = 0; k < lat.length; k++)
-                    {
-                        if(lat[k]==tolllat[j])
-                        {
-                            break;
-                        }
-                    }
-                    toll = k-ref;
-                    toll*=0.1*2;
 
-                    Log.d("Toll k ","Toll "+k+" "+ref);
+                        int k;
+                        for (k = 0; k < lat.length; k++) {
+                            if (lat[k] == tolllat[j]) {
+                                break;
+                            }
+                        }
+                        if (j == 0) {
+                            toll = k - ref;
+                        } else {
+                            int kleft;
+                            for (kleft = 0; kleft < lat.length; kleft++) {
+                                if (lat[kleft] == tolllat[j - 1]) {
+                                    break;
+                                }
+                            }
+                            if (ref < kleft)
+                                toll = k - kleft;
+                            else
+                                toll = k - ref;
+                        }
+                        //toll= k-ref;
+                        toll *= 0.1 * 2;
+
+                            //Log.d("Toll k ", "Toll " + k + " " + ref+" "+toll);
+                        break;
+                    }
+
                 }
-            }
-        }
+     //   }
 
         return toll;
+    }
+
+    public boolean startPoint(double slat,double slon)
+    {
+        for(int j = 0 ;j < lat.length; j++)
+        {
+            double dist = distance(lat[j],lon[j],slat,slon);
+            if(dist <= 0.07 )
+            {
+                ref = j;
+                return true;
+                //sref = i;
+                /*if(distance(slat[i+1],slon[i+1],lat[j+1],lon[j+1])<=0.07 || distance(slat[i+1],slon[i+1],lat[j+2],lon[j+2])<=0.07 || distance(slat[i+1],slon[i+1],lat[j+3],lon[j+3])<=0.07){
+                    flg=1;
+                    Log.d("Found","lat lon : "+lat[ref]+" "+lon[ref]);
+                    Toast.makeText(this,"lat lon : "+lat[ref]+" "+lon[ref],Toast.LENGTH_LONG).show();
+                    break;
+                }*/
+                // reflon = j;
+            }
+        }
+        return false;
+    }
+
+    public boolean isEndPoint(double slat,double slon)
+    {
+        int flg=0;
+        for(int j = 0;j<lat.length;j++)
+        {
+            double dist = distance(lat[j],lon[j],slat,slon);
+            if(dist<=0.7)
+            {
+                endref=j;
+                flg=1;
+                break;
+            }
+        }
+        if(flg==1)
+            return false;
+        else
+            return true;
+
     }
 
     @Override
